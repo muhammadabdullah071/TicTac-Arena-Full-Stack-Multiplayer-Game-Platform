@@ -1,0 +1,623 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  player
+  moderator
+  admin
+}
+
+enum FriendStatus {
+  pending
+  accepted
+  blocked
+}
+
+enum MatchStatus {
+  playing
+  finished
+}
+
+enum MatchMode {
+  casual
+  ranked
+  ai
+  tournament
+  ultimate
+}
+
+enum TournamentStatus {
+  draft
+  registration
+  starting
+  live
+  completed
+  cancelled
+}
+
+enum TournamentFormat {
+  single_elimination
+  double_elimination
+  round_robin
+}
+
+enum MissionType {
+  daily
+  weekly
+}
+
+enum MissionRequirement {
+  play_games
+  win_games
+  win_ranked
+  win_streak
+  beat_hard_ai
+  beat_impossible_ai
+  join_tournament
+}
+
+enum CosmeticType {
+  theme
+  frame
+  animation
+}
+
+enum CurrencyType {
+  xp
+  coins
+}
+
+enum TransactionType {
+  earn
+  spend
+  reward
+}
+
+enum ReportReason {
+  cheating
+  harassment
+  spam
+  inappropriate_name
+  other
+}
+
+enum ReportStatus {
+  pending
+  resolved
+  dismissed
+}
+
+enum SeasonStatus {
+  upcoming
+  active
+  completed
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String   @map("provider_account_id")
+  refreshToken      String?  @map("refresh_token")
+  accessToken       String?  @map("access_token")
+  expiresAt         Int?     @map("expires_at")
+  tokenType         String?  @map("token_type")
+  scope             String?
+  idToken           String?  @map("id_token")
+  sessionState      String?  @map("session_state")
+  password          String?
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([provider, providerAccountId])
+  @@map("auth_accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+model VerificationToken {
+  identifier String
+  expires    DateTime
+  token      String
+
+  @@unique([identifier, token])
+  @@map("auth_verification_tokens")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime? @map("email_verified")
+  image          String?
+  accounts       Account[]
+  sessions       Session[]
+  profile        Profile?
+  conversations  Conversation[] @relation("ConversationParticipantOne")
+  conversations2 Conversation[] @relation("ConversationParticipantTwo")
+
+  @@map("auth_users")
+}
+
+model Profile {
+  id             String    @id @default(cuid())
+  username       String    @unique
+  bio            String?
+  avatarUrl      String?   @map("avatar_url")
+  rank           String    @default("Bronze")
+  elo            Int       @default(1000)
+  xp             Int       @default(0)
+  level          Int       @default(1)
+  coins          Int       @default(0)
+  winStreak      Int       @default(0) @map("win_streak")
+  highestStreak  Int       @default(0) @map("highest_streak")
+  totalMatches   Int       @default(0) @map("total_matches")
+  totalWins      Int       @default(0) @map("total_wins")
+  totalLosses    Int       @default(0) @map("total_losses")
+  totalDraws     Int       @default(0) @map("total_draws")
+  role           UserRole  @default(player)
+  isBanned       Boolean   @default(false) @map("is_banned")
+  banReason      String?   @map("ban_reason")
+  bannedUntil    DateTime? @map("banned_until")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  matchesAsX           Match[]             @relation("PlayerX")
+  matchesAsO           Match[]             @relation("PlayerO")
+  matchesWon           Match[]             @relation("Winner")
+  moves                Move[]
+  messages             Message[]
+  sentFriendRequests   Friend[]            @relation("Requester")
+  receivedFriendRequest Friend[]           @relation("Target")
+  transactions         Transaction[]
+  queueEntries         MatchmakingQueue[]
+  userAchievements     UserAchievement[]
+  userMissions         UserMission[]
+  userCosmetics        UserCosmetic[]
+  dailyRewards         DailyReward[]
+  reportsMade          Report[]            @relation("Reporter")
+  reportsReceived      Report[]            @relation("Reported")
+  reportsResolved      Report[]            @relation("Resolver")
+  auditLogs            AuditLog[]
+  createdTournaments   Tournament[]        @relation("Creator")
+  tournamentEntries    TournamentParticipant[]
+
+  @@map("profiles")
+}
+
+model Match {
+  id            String      @id @default(cuid())
+  mode          MatchMode
+  status        MatchStatus @default(playing)
+  playerXId     String      @map("player_x_id")
+  playerOId     String?     @map("player_o_id")
+  currentTurnId String?     @map("current_turn_id")
+  winnerId      String?     @map("winner_id")
+  isDraw        Boolean     @default(false) @map("is_draw")
+  difficulty    String?
+  boardState    Json        @default("{\"board\":[null,null,null,null,null,null,null,null,null],\"moves\":[]}") @map("board_state")
+  xpAwarded     Int         @default(0) @map("xp_awarded")
+  eloChange     Int         @default(0) @map("elo_change")
+  tournamentId  String?     @map("tournament_id")
+  round         Int?
+  createdAt     DateTime    @default(now()) @map("created_at")
+  finishedAt    DateTime?   @map("finished_at")
+  lastMoveAt    DateTime    @default(now()) @map("last_move_at")
+
+  playerX      Profile            @relation("PlayerX", fields: [playerXId], references: [id])
+  playerO      Profile?           @relation("PlayerO", fields: [playerOId], references: [id])
+  winner       Profile?           @relation("Winner", fields: [winnerId], references: [id])
+  tournament   Tournament?        @relation(fields: [tournamentId], references: [id])
+  moves        Move[]
+  messages     Message[]
+  queueEntries MatchmakingQueue[]
+  reports      Report[]
+
+  @@index([playerXId])
+  @@index([playerOId])
+  @@index([tournamentId])
+  @@index([status])
+  @@index([mode])
+  @@index([createdAt])
+  @@map("matches")
+}
+
+model Move {
+  id            String   @id @default(cuid())
+  matchId       String   @map("match_id")
+  playerId      String   @map("player_id")
+  position      Int
+  moveNumber    Int      @map("move_number")
+  boardSnapshot Json     @map("board_snapshot")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  match  Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Profile @relation(fields: [playerId], references: [id])
+
+  @@index([matchId])
+  @@index([playerId])
+  @@map("moves")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  senderId  String   @map("sender_id")
+  content   String
+  isGlobal  Boolean  @default(false) @map("is_global")
+  matchId   String?  @map("match_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  sender Profile @relation(fields: [senderId], references: [id])
+  match  Match?  @relation(fields: [matchId], references: [id])
+
+  @@index([senderId])
+  @@index([matchId])
+  @@index([isGlobal])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model Conversation {
+  id              String   @id @default(cuid())
+  participantOne  String   @map("participant_one")
+  participantTwo  String   @map("participant_two")
+  lastMessageAt   DateTime @default(now()) @map("last_message_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  participantOneProfile Profile @relation("ConversationParticipantOne", fields: [participantOne], references: [id])
+  participantTwoProfile Profile @relation("ConversationParticipantTwo", fields: [participantTwo], references: [id])
+
+  @@unique([participantOne, participantTwo])
+  @@map("conversations")
+}
+
+model Friend {
+  userId    String       @map("user_id")
+  friendId  String       @map("friend_id")
+  status    FriendStatus @default(pending)
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  requester Profile @relation("Requester", fields: [userId], references: [id])
+  target    Profile @relation("Target", fields: [friendId], references: [id])
+
+  @@id([userId, friendId])
+  @@index([friendId])
+  @@map("friends")
+}
+
+model MatchmakingQueue {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  mode      String
+  elo       Int
+  status    String   @default("waiting")
+  matchId   String?  @map("match_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  user  Profile @relation(fields: [userId], references: [id])
+  match Match?  @relation(fields: [matchId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([mode])
+  @@map("matchmaking_queue")
+}
+
+model Tournament {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  status      TournamentStatus  @default(draft)
+  format      TournamentFormat  @default(single_elimination)
+  startTime   DateTime          @map("start_time")
+  maxPlayers  Int               @default(8) @map("max_players")
+  prizePool   Int               @default(0) @map("prize_pool")
+  creatorId   String?           @map("creator_id")
+  currentRound Int              @default(0) @map("current_round")
+  bracket     Json?
+  seasonId    String?           @map("season_id")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  finishedAt  DateTime?         @map("finished_at")
+
+  creator      Profile?               @relation("Creator", fields: [creatorId], references: [id])
+  season       Season?                @relation(fields: [seasonId], references: [id])
+  participants TournamentParticipant[]
+  matches      Match[]
+
+  @@index([status])
+  @@index([startTime])
+  @@index([seasonId])
+  @@map("tournaments")
+}
+
+model TournamentParticipant {
+  id           String   @id @default(cuid())
+  tournamentId String   @map("tournament_id")
+  userId       String   @map("user_id")
+  score        Int      @default(0)
+  matchesWon   Int      @default(0) @map("matches_won")
+  seed         Int?
+  bracketPosition Int?  @map("bracket_position")
+  joinedAt     DateTime @default(now()) @map("joined_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       Profile    @relation(fields: [userId], references: [id])
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId])
+  @@index([userId])
+  @@map("tournament_participants")
+}
+
+model Achievement {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  iconKey     String?  @map("icon_key")
+  xpReward    Int      @default(0) @map("xp_reward")
+  coinReward  Int      @default(0) @map("coin_reward")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            Int      @id @default(autoincrement())
+  userId        String   @map("user_id")
+  achievementId Int      @map("achievement_id")
+  unlockedAt    DateTime @default(now()) @map("unlocked_at")
+  progress      Int?
+
+  user        Profile     @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@map("user_achievements")
+}
+
+model Mission {
+  id               Int                @id @default(autoincrement())
+  title            String
+  description      String
+  type             MissionType
+  requirementType  MissionRequirement @map("requirement_type")
+  requirementValue Int                @map("requirement_value")
+  xpReward         Int                @default(0) @map("xp_reward")
+  coinReward       Int                @default(0) @map("coin_reward")
+  isActive         Boolean            @default(true) @map("is_active")
+  createdAt        DateTime           @default(now()) @map("created_at")
+
+  userMissions UserMission[]
+
+  @@map("missions")
+}
+
+model UserMission {
+  id            Int       @id @default(autoincrement())
+  userId        String    @map("user_id")
+  missionId     Int       @map("mission_id")
+  progress      Int       @default(0)
+  completed     Boolean   @default(false)
+  claimed       Boolean   @default(false)
+  expiresAt     DateTime  @map("expires_at")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user    Profile @relation(fields: [userId], references: [id])
+  mission Mission @relation(fields: [missionId], references: [id])
+
+  @@unique([userId, missionId])
+  @@index([userId])
+  @@map("user_missions")
+}
+
+model Cosmetic {
+  id        Int          @id @default(autoincrement())
+  name      String
+  type      CosmeticType
+  price     Int
+  config    Json?
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  userCosmetics UserCosmetic[]
+
+  @@map("cosmetics")
+}
+
+model UserCosmetic {
+  id         Int     @id @default(autoincrement())
+  userId     String  @map("user_id")
+  cosmeticId Int     @map("cosmetic_id")
+  isEquipped Boolean @default(false) @map("is_equipped")
+
+  user     Profile  @relation(fields: [userId], references: [id])
+  cosmetic Cosmetic @relation(fields: [cosmeticId], references: [id])
+
+  @@unique([userId, cosmeticId])
+  @@index([userId])
+  @@map("user_cosmetics")
+}
+
+model Transaction {
+  id          Int            @id @default(autoincrement())
+  userId      String         @map("user_id")
+  type        TransactionType
+  amount      Int
+  currency    CurrencyType
+  description String
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+model DailyReward {
+  id          Int      @id @default(autoincrement())
+  userId      String   @map("user_id")
+  dayStreak   Int      @map("day_streak")
+  coinsEarned Int      @map("coins_earned")
+  xpEarned    Int      @map("xp_earned")
+  claimedAt   DateTime @default(now()) @map("claimed_at")
+
+  user Profile @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([claimedAt])
+  @@map("daily_rewards")
+}
+
+model Report {
+  id          Int          @id @default(autoincrement())
+  reporterId  String       @map("reporter_id")
+  reportedId  String       @map("reported_id")
+  matchId     String?      @map("match_id")
+  reason      ReportReason
+  description String?
+  status      ReportStatus @default(pending)
+  resolvedBy  String?      @map("resolved_by")
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  reporter Profile @relation("Reporter", fields: [reporterId], references: [id])
+  reported Profile @relation("Reported", fields: [reportedId], references: [id])
+  match    Match?  @relation(fields: [matchId], references: [id])
+  resolver Profile? @relation("Resolver", fields: [resolvedBy], references: [id])
+
+  @@index([reportedId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  adminId    String?  @map("admin_id")
+  action     String
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id")
+  details    Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin Profile? @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Season {
+  id          String        @id @default(cuid())
+  name        String
+  number      Int
+  status      SeasonStatus  @default(upcoming)
+  startDate   DateTime      @map("start_date")
+  endDate     DateTime      @map("end_date")
+  rewards     Json?
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  tournaments Tournament[]
+  leaderboards SeasonLeaderboardEntry[]
+
+  @@index([status])
+  @@index([number])
+  @@map("seasons")
+}
+
+model SeasonLeaderboardEntry {
+  id        String   @id @default(cuid())
+  seasonId  String   @map("season_id")
+  userId    String   @map("user_id")
+  elo       Int      @default(1000)
+  peakElo   Int      @default(1000) @map("peak_elo")
+  matchesPlayed Int @default(0) @map("matches_played")
+  wins      Int      @default(0)
+  rank      String   @default("Bronze")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  season Season @relation(fields: [seasonId], references: [id])
+
+  @@unique([seasonId, userId])
+  @@index([seasonId])
+  @@index([elo])
+  @@map("season_leaderboard_entries")
+}
+
+model PushSubscription {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  endpoint    String
+  p256dh      String
+  auth        String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, endpoint])
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model NotificationPreference {
+  id        String  @id @default(cuid())
+  userId    String  @map("user_id")
+  key       String
+  enabled   Boolean @default(true)
+
+  @@unique([userId, key])
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+model Replay {
+  id        String   @id @default(cuid())
+  matchId   String   @unique @map("match_id")
+  isPublic  Boolean  @default(true) @map("is_public")
+  title     String?
+  shareCode String   @unique @map("share_code")
+  views     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  match Match @relation(fields: [matchId], references: [id])
+  comments ReplayComment[]
+
+  @@index([shareCode])
+  @@index([isPublic])
+  @@map("replays")
+}
+
+model ReplayComment {
+  id        String   @id @default(cuid())
+  replayId  String   @map("replay_id")
+  userId    String   @map("user_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  replay Replay @relation(fields: [replayId], references: [id], onDelete: Cascade)
+
+  @@index([replayId])
+  @@map("replay_comments")
+}

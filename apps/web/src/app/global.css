@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent-primary: #6D28D9;
+  --accent-secondary: #8B5CF6;
+  --accent-light: #A78BFA;
+  --accent-glow: rgba(109, 40, 217, 0.2);
+  --accent-hover: #5B21B6;
+  --accent-ring: #6D28D9;
+  --bg-dark: #0B1120;
+  --bg-card: #111827;
+  --bg-input: #1F2937;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --border-subtle: rgba(229, 231, 235, 0.1);
+  --success: #22C55E;
+  --error: #EF4444;
+  --warning: #F59E0B;
+  --info: #22D3EE;
+}
+
+@layer base {
+  input, textarea, select, button {
+    @apply outline-none focus:outline-none;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .bg-theme-card {
+    background-color: var(--bg-card);
+  }
+  .text-theme-primary {
+    color: var(--text-primary);
+  }
+  .text-theme-secondary {
+    color: var(--text-secondary);
+  }
+  .border-theme {
+    border-color: var(--border-subtle);
+  }
+}

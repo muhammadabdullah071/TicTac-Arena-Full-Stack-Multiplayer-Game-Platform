@@ -1,0 +1,16 @@
+{
+  "name": "TicTac Arena",
+  "short_name": "TicTacArena",
+  "description": "Competitive Tic-Tac-Toe Arena",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B1120",
+  "theme_color": "#6D28D9",
+  "icons": [
+    {
+      "src": "/src/__create/favicon.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - run: npm ci
+      - run: npx prisma generate --schema=packages/database/prisma/schema.prisma
+      - run: npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: npm run -w packages/shared build
+      - run: npm run -w packages/database build
+      - run: npm run -w apps/web build
+      - run: npm run -w apps/socket build
+
+      - name: Deploy Web
+        run: |
+          npx wrangler pages deploy apps/web/build/client --project-name=tictac-arena --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        continue-on-error: true
+
+      - name: Build and Push Docker Images
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker build -t tictac-web:latest -f apps/web/Dockerfile .
+          docker build -t tictac-socket:latest -f apps/socket/Dockerfile .
+          docker push tictac-web:latest
+          docker push tictac-socket:latest
+        continue-on-error: true

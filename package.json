@@ -1,0 +1,32 @@
+{
+  "name": "tictac-arena",
+  "description": "Full-stack multiplayer Tic-Tac-Toe platform with real-time matchmaking, tournaments, leaderboards, and chat — built with React, Socket.IO, PostgreSQL, and Redis.",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/web",
+    "apps/socket"
+  ],
+  "scripts": {
+    "dev:web": "npm run -w @tictac/web dev",
+    "dev:socket": "npm run -w @tictac/socket dev",
+    "build:shared": "npm run -w @tictac/shared build",
+    "build:database": "npm run -w @tictac/database build",
+    "build:web": "npm run -w @tictac/web build",
+    "build:socket": "npm run -w @tictac/socket build",
+    "db:generate": "npm run -w @tictac/database generate",
+    "db:migrate": "npm run -w @tictac/database migrate:deploy",
+    "db:studio": "npm run -w @tictac/database studio",
+    "test": "npm run -w @tictac/web test"
+  },
+  "dependencies": {
+    "@auth/core": "^0.34.3",
+    "@hono/auth-js": "^1.1.1",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "hono": "^4.12.26",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
