@@ -8,10 +8,10 @@ import { TicTacToeAI, checkGameState, calculateXP } from "@/lib/gameAI";
 import TicTacLogo from "@/components/TicTacLogo";
 
 const DIFFICULTIES = [
-  { id: 'easy',       label: 'Easy',       icon: '🟢', desc: 'Perfect for beginners',  xpNote: '+15 XP on win', color: '#10B981', glow: 'rgba(16,185,129,0.35)',  border: 'rgba(16,185,129,0.4)',  bg: 'rgba(16,185,129,0.08)' },
-  { id: 'medium',     label: 'Medium',     icon: '🟡', desc: 'Balanced challenge',      xpNote: '+25 XP on win', color: '#F59E0B', glow: 'rgba(245,158,11,0.35)', border: 'rgba(245,158,11,0.4)', bg: 'rgba(245,158,11,0.08)' },
-  { id: 'hard',       label: 'Hard',       icon: '🔴', desc: 'Tough opponent',          xpNote: '+40 XP on win', color: '#EF4444', glow: 'rgba(239,68,68,0.35)',  border: 'rgba(239,68,68,0.4)',  bg: 'rgba(239,68,68,0.08)' },
-  { id: 'impossible', label: 'Impossible', icon: '💜', desc: 'Unbeatable AI',           xpNote: '+60 XP on win', color: '#A78BFA', glow: 'rgba(124,58,237,0.5)',  border: 'rgba(124,58,237,0.5)', bg: 'linear-gradient(135deg, rgba(124,58,237,0.18), rgba(109,40,217,0.12))', special: true },
+  { id: 'easy',       label: 'Easy',       desc: 'Perfect for beginners',  xpNote: '+15 XP on win', color: '#10B981', glow: 'rgba(16,185,129,0.35)',  border: 'rgba(16,185,129,0.4)',  bg: 'rgba(16,185,129,0.08)' },
+  { id: 'medium',     label: 'Medium',     desc: 'Balanced challenge',      xpNote: '+25 XP on win', color: '#F59E0B', glow: 'rgba(245,158,11,0.35)', border: 'rgba(245,158,11,0.4)', bg: 'rgba(245,158,11,0.08)' },
+  { id: 'hard',       label: 'Hard',       desc: 'Tough opponent',          xpNote: '+40 XP on win', color: '#EF4444', glow: 'rgba(239,68,68,0.35)',  border: 'rgba(239,68,68,0.4)',  bg: 'rgba(239,68,68,0.08)' },
+  { id: 'impossible', label: 'Impossible', desc: 'Unbeatable AI',           xpNote: '+60 XP on win', color: '#A78BFA', glow: 'rgba(124,58,237,0.5)',  border: 'rgba(124,58,237,0.5)', bg: 'linear-gradient(135deg, rgba(124,58,237,0.18), rgba(109,40,217,0.12))', special: true },
 ];
 
 function ThinkingDots() {
@@ -75,9 +75,9 @@ function PlayerPanel({ label, symbol, isActive, isUser, username }) {
 function ResultModal({ gameState, xpEarned, difficulty, onPlayAgain }) {
   const winner = gameState.winner;
   const cfgMap = {
-    X:    { emoji: '🎉', title: 'Victory!',    subtitle: 'You defeated the AI!',    color: '#10B981' },
-    O:    { emoji: '🤖', title: 'Defeated',    subtitle: 'The AI wins this round.',  color: '#EF4444' },
-    draw: { emoji: '🤝', title: 'Draw!',       subtitle: 'Well played by both!',     color: '#F59E0B' },
+    X:    { title: 'Victory!',    subtitle: 'You defeated the AI!',    color: '#10B981' },
+    O:    { title: 'Defeated',    subtitle: 'The AI wins this round.',  color: '#EF4444' },
+    draw: { title: 'Draw!',       subtitle: 'Well played by both!',     color: '#F59E0B' },
   };
   const cfg = cfgMap[winner] || cfgMap.draw;
   const confettiColors = ['#A78BFA', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
@@ -317,7 +317,7 @@ export default function PlayAIPage() {
                     e.currentTarget.style.transform = 'none';
                   }}
                 >
-                  <div className="text-3xl mb-3">{d.icon}</div>
+                  <div className="w-3 h-3 rounded-full mb-3" style={{ background: d.color, boxShadow: `0 0 8px ${d.color}` }} />
                   <div className="font-bold text-white text-lg mb-1">{d.label}</div>
                   <div className="text-sm mb-3" style={{ color: '#94A3B8' }}>{d.desc}</div>
                   <div
