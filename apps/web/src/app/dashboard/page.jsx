@@ -184,7 +184,9 @@ export default function DashboardPage() {
                 <div
                   className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${getRankColor(profile.rank)} flex items-center justify-center shrink-0`}
                 >
-                  <span className="text-3xl">⚔️</span>
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                  </svg>
                 </div>
                 <div>
                   <div className="text-xs font-medium text-gray-400 mb-1">

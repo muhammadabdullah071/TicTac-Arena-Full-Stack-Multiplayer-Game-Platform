@@ -1,5 +1,5 @@
 import sql from "@/app/api/utils/sql";
-import { auth } from "@/auth";
+import { getSession } from "@/app/api/utils/session";
 
 const BUILT_IN_ACHIEVEMENTS = [
   { id: '1', name: 'First Victory', description: 'Win your first game', xp_reward: 100, coin_reward: 50, unlocked: false, unlocked_at: null },
@@ -18,7 +18,7 @@ const BUILT_IN_ACHIEVEMENTS = [
 
 export async function GET(request) {
   try {
-    const session = await auth();
+    const session = await getSession(request);
     if (!session?.user?.id) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }

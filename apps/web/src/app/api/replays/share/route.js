@@ -1,10 +1,10 @@
 import sql from "@/app/api/utils/sql";
-import { auth } from "@/auth";
+import { getSession } from "@/app/api/utils/session";
 import crypto from "crypto";
 
 export async function POST(request) {
   try {
-    const session = await auth();
+    const session = await getSession(request);
     if (!session?.user?.id) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }

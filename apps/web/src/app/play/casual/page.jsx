@@ -40,10 +40,11 @@ export default function CasualPage() {
         handleGameEnd(state.winner);
       }
     } else if (currentPlayer !== playerSymbol && !opponentThinkingRef.current) {
-      // Simulate opponent move
+      // Simulate opponent move - capture board snapshot for closure
+      const boardSnapshot = [...board];
       opponentThinkingRef.current = true;
       const timer = setTimeout(() => {
-        makeOpponentMove();
+        makeOpponentMove(boardSnapshot);
         opponentThinkingRef.current = false;
       }, 800);
       return () => clearTimeout(timer);
@@ -63,8 +64,8 @@ export default function CasualPage() {
     setCurrentPlayer(nextPlayer);
   };
 
-  const makeOpponentMove = () => {
-    const availableMoves = board
+  const makeOpponentMove = (currentBoard) => {
+    const availableMoves = currentBoard
       .map((cell, index) => (cell === null ? index : null))
       .filter((index) => index !== null);
 
@@ -73,7 +74,7 @@ export default function CasualPage() {
       const randomIndex =
         availableMoves[Math.floor(Math.random() * availableMoves.length)];
 
-      const newBoard = [...board];
+      const newBoard = [...currentBoard];
       newBoard[randomIndex] = opponentSymbol;
       setBoard(newBoard);
       setCurrentPlayer(playerSymbol);

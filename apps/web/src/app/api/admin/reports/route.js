@@ -1,5 +1,5 @@
 import sql from "@/app/api/utils/sql";
-import { auth } from "@/auth";
+import { getSession } from "@/app/api/utils/session";
 
 async function requireAdmin(session) {
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -12,7 +12,7 @@ async function requireAdmin(session) {
 
 export async function GET(request) {
   try {
-    const session = await auth();
+    const session = await getSession(request);
     await requireAdmin(session);
 
     const { searchParams } = new URL(request.url);
@@ -56,7 +56,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const session = await auth();
+    const session = await getSession(request);
     await requireAdmin(session);
     const adminId = session.user.id;
 

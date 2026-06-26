@@ -40,11 +40,9 @@ export default function RankedPage() {
     const state = checkGameState(board);
     setGameState(state);
 
-    if (state.winner) {
-      if (!gameOverRef.current) {
-        gameOverRef.current = true;
-        handleGameEnd(state.winner);
-      }
+    if (state.winner && !gameOverRef.current) {
+      gameOverRef.current = true;
+      handleGameEnd(state.winner);
     }
   }, [board]);
 
@@ -166,7 +164,7 @@ export default function RankedPage() {
     gameOverRef.current = false;
   };
 
-  if (userLoading) {
+  if (userLoading || !profile) {
     return (
       <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
         <div
